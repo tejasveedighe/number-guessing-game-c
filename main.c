@@ -1,63 +1,88 @@
-#include<stdio.h>
-#include<stdlib.h> // For rand() and system("")
-#include<time.h> // for time()
+#include "clear_screen.h" // for clear_screen()
 
-/*
- * What does a number guessing game do?
- * 1. Generates a random number from a range.
- * 2. Makes the user guess the number.
- * 3. Provides hint about how close the user is.
- * 4. When correct guess, then show celebration.
- * */
+#include "rng.h" // for get_random_value
+#include <stdio.h>
 
-/*
- * Questions:
- * 1. How do random number generate in c? Ans - rand()
- * 2. How do i set a limit to the rand() function?
- * 3. Why do i need to seed the rand() and how?
- * Ans - because it will seed once during compile and then always return the same value, time(NULL)
- * 4. Why did scanf work with &input and not just input?
- * */
+void congratulateUser() {
+  printf("\n\n Congratulations User you have won!\n\nThanks for playing\n");
+}
 
-void clrscr();
+int take_user_input_for_game(int min, int max) {
+  int input = 0;
+getInput:
+  scanf("%d", &input);
 
-void clrscr() {
-  system("clear");
+  if (input < min || input > max) {
+    printf("Invalid input, enter a value between %d and %d\n", min, max);
+    goto getInput;
+  }
+
+  return input;
+}
+
+int take_user_input() {
+  int max = 0;
+getvalue:
+  printf("Enter a max value for the number: ");
+  scanf("%d", &max);
+
+  // validate the input
+  if (max <= 2) {
+    printf("Incorrect value for max, Please enter a value greater than 2\n");
+    goto getvalue;
+  }
+
+  return max;
 }
 
 int main() {
-  // clear the terminal
-  clrscr();
 
-  // seeding the rand method
-  srand(time(NULL));
+#if (defined(_WIN32) || defined(_WIN64))
+  puts("Windows");
+#elif defined(LINUX) || defined(__linux__)
+  puts("Linux");
+#endif
 
-  int minValue = 1, maxValue = 10;
+  puts("Welcome to the number guessing game user.");
+  puts("Press any key to continue.");
 
-  // this function returns a random number
-  int x = minValue + rand() % (maxValue - minValue + 1);
+  getchar();
+  clear_screen();
 
-  while(true) {
+  int min = 0, max = take_user_input();
+  int random_value = get_random_integer(min, max);
 
-    printf("\nGuess the number, Enter a number: ");
+  printf("The game is ready to play.\nNow try to enter a number that is "
+         "between 0 and %d.\n\nEach time you enter a value the game will hint "
+         "you with 'Warmer' or 'Colder' messages.\nWarmer - Getting "
+         "closer.\nColder - Getting far.\n",
+         max);
 
-    int input = 0;
-    scanf("%d", &input);
+  int gameOverClose = 0, input = 0, currDiff = 0, prevDiff = 0;
+  while (gameOverClose == 0) {
 
-    if(input > x) {
-      printf("\nSmaller");
-    }
-    else if(input < x) {
-      printf("\nLarger");
-    }else if(input == x) {
-      printf("\nYou guessed correctly!!!");
+    input = take_user_input_for_game(min, max);
+    currDiff = input - random_value;
+
+    // CASE: GAME WIN
+    if (currDiff == 0) {
+      congratulateUser();
+      gameOverClose = 1;
       break;
     }
-    int temp = getchar();
-    clrscr();
-  }
 
-  printf("\nGood Bye");
+    if (currDiff > prevDiff) {
+      puts("\nColder");
+      prevDiff = currDiff;
+      continue;
+    }
+
+    if (currDiff < prevDiff) {
+      puts("\nWarmer");
+      prevDiff = currDiff;
+      continue;
+    }
+  }
 
   return 0;
 }
